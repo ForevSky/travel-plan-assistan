@@ -55,7 +55,7 @@ export default function DayTimeline({ days }: DayTimelineProps) {
           {day.summary && (
             <div className="travel-day-timeline__summary">
               <Tag color="processing">交通小结</Tag>
-              <span>{day.summary.replace(/^当日交通小结[：:]\s*/, "")}</span>
+              <span>{day.summary.replace(/^当?日?交通(?:小贴士|小结)[：:]\s*/, "")}</span>
             </div>
           )}
         </div>

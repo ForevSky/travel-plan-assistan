@@ -8,18 +8,44 @@ from backend.core import config
 from backend.domain import validator
 
 INVALID_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|]')
-GALLERY_HEADER_RE = re.compile(
-    r"(?:^|\n)[#*\s]*(?:十[、.．]\s*)?(?:关联图示|图示索引)", re.IGNORECASE
+_GALLERY_NUM = r"(?:[一二三四五六七八九十百廿卅\d]+[、.．]\s*)"
+_GALLERY_TITLE = r"(?:关联图示|关联图片|图示索引)"
+GALLERY_HEADER_LINE_RE = re.compile(
+    rf"(?:^|\n)\s*(?:#{{1,4}}\s*)?{_GALLERY_NUM}?{_GALLERY_TITLE}(?:\s*(?:$|\n))",
+    re.IGNORECASE | re.MULTILINE,
+)
+GALLERY_HEADER_INLINE_RE = re.compile(
+    rf"[。；;！!?\?](?=\s*(?:#{{1,4}}\s*)?{_GALLERY_NUM}?{_GALLERY_TITLE})",
+    re.IGNORECASE | re.MULTILINE,
 )
 IMG_TAG_RE = re.compile(r"@img\[[^|\]]+\|[^|\]]+\|[^\]]*\]")
 
 
+def _find_gallery_start(content: str) -> int:
+    """定位关联图示章节起始位置，与前端 stripGalleryFromText 逻辑对齐。"""
+    cut_at = -1
+    line_match = GALLERY_HEADER_LINE_RE.search(content)
+    if line_match:
+        cut_at = line_match.start()
+    inline_match = GALLERY_HEADER_INLINE_RE.search(content)
+    if inline_match:
+        pos = inline_match.start() + 1
+        if cut_at == -1 or pos < cut_at:
+            cut_at = pos
+    return cut_at
+
+
+def strip_gallery_from_text(content: str) -> str:
+    """移除「关联图示」章节及 @img 标签（展示/导出通用）。"""
+    cut_at = _find_gallery_start(content)
+    if cut_at >= 0:
+        return content[:cut_at].strip()
+    return IMG_TAG_RE.sub("", content).strip()
+
+
 def _strip_gallery_for_export(content: str) -> str:
     """导出时移除「关联图示」章节及 @img 标签。"""
-    match = GALLERY_HEADER_RE.search(content)
-    if match:
-        return content[: match.start()].strip()
-    return IMG_TAG_RE.sub("", content).strip()
+    return strip_gallery_from_text(content)
 
 
 def _safe_city_name(city: str) -> str:

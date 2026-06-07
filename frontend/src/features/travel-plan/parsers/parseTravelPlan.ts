@@ -41,17 +41,70 @@ export interface ParsedTravelPlan {
   allImages: ImageTagItem[];
 }
 
+const IMG_TAG_RE = /@img\[([^|\]]+)\|([^|\]]+)\|([^\]]*)\]/g;
+
+const GALLERY_NUM = String.raw`(?:[一二三四五六七八九十百廿卅\d]+[、.．]\s*)`;
+const GALLERY_TITLE = String.raw`(?:关联图示|关联图片|图示索引)`;
+/** 独立成行的关联图示章节标题（支持十一、十二等序号） */
+const GALLERY_HEADER_LINE_RE = new RegExp(
+  String.raw`(?:^|\n)\s*(?:#{1,4}\s*)?${GALLERY_NUM}?${GALLERY_TITLE}(?:\s*(?:$|\n))`,
+  "im"
+);
+/** 句号/分号后紧跟的关联图示标题（模型偶发写在段末同一行） */
+const GALLERY_HEADER_INLINE_RE = new RegExp(
+  String.raw`[。；;！!?\?](?=\s*(?:#{1,4}\s*)?${GALLERY_NUM}?${GALLERY_TITLE})`,
+  "im"
+);
+
+function findGalleryStart(text: string): number {
+  let cutAt = -1;
+
+  const lineMatch = GALLERY_HEADER_LINE_RE.exec(text);
+  if (lineMatch?.index !== undefined) {
+    cutAt = lineMatch.index;
+  }
+
+  GALLERY_HEADER_INLINE_RE.lastIndex = 0;
+  const inlineMatch = GALLERY_HEADER_INLINE_RE.exec(text);
+  if (inlineMatch?.index !== undefined) {
+    const pos = inlineMatch.index + 1;
+    if (cutAt === -1 || pos < cutAt) {
+      cutAt = pos;
+    }
+  }
+
+  return cutAt;
+}
+
+/** 章节标题行前缀：允许任意中文/阿拉伯序号，模型偶发会写「三、行程概览」等 */
+const SECTION_LINE = String.raw`(?:^|\n)\s*(?:#{1,4}\s*)?(?:[一二三四五六七八九十百\d]+[、.．]\s*)?`;
+
+function sectionPattern(keyword: string): RegExp {
+  return new RegExp(`${SECTION_LINE}${keyword}`, "im");
+}
+
+const DAY_HEADER_COUNT_RE = /(?:^|\n)\s*(?:#{1,4}\s*)?Day\s*\d+\s*[：:]/gim;
+
 const SECTION_DEFS = [
-  { key: "overview", pattern: /(?:^|\n)[#*\s]*[一1][、.．]\s*行程概览/im },
-  { key: "weather", pattern: /(?:^|\n)[#*\s]*[二2][、.．]\s*季节/im },
-  { key: "daily", pattern: /(?:^|\n)[#*\s]*[三3][、.．]\s*每日/im },
-  { key: "food", pattern: /(?:^|\n)[#*\s]*[四4][、.．]\s*(?:美食|小吃)/im },
-  { key: "spots", pattern: /(?:^|\n)[#*\s]*[五5][、.．]\s*景点/im },
-  { key: "traffic", pattern: /(?:^|\n)[#*\s]*[六6][、.．]\s*交通/im },
-  { key: "notes", pattern: /(?:^|\n)[#*\s]*[七7][、.．]\s*注意/im },
-  { key: "budget", pattern: /(?:^|\n)[#*\s]*[八8][、.．]\s*预算/im },
-  { key: "disclaimer", pattern: /(?:^|\n)[#*\s]*[九9][、.．]\s*免责/im },
-  { key: "gallery", pattern: /(?:^|\n)[#*\s]*(?:十[、.．]\s*)?(?:关联图示|图示索引)/im },
+  { key: "overview", pattern: sectionPattern(String.raw`行程概览`) },
+  { key: "weather", pattern: sectionPattern(String.raw`(?:季节|天气)`) },
+  {
+    key: "daily",
+    pattern: sectionPattern(String.raw`(?:每日(?:合理|详细)?(?:路线|行程)|路线与攻略)`),
+  },
+  { key: "food", pattern: sectionPattern(String.raw`(?:美食|小吃)(?:推荐)?(?:清单)?`) },
+  {
+    key: "spots",
+    pattern: sectionPattern(String.raw`景点(?:预约(?:与|及)?收费)?(?:汇总)?清单`),
+  },
+  { key: "traffic", pattern: sectionPattern(String.raw`交通(?:出行)?(?:建议)?`) },
+  {
+    key: "notes",
+    pattern: sectionPattern(String.raw`注意(?:事项)?(?:与|及)?(?:必备物品)?`),
+  },
+  { key: "budget", pattern: sectionPattern(String.raw`预算(?:参考)?`) },
+  { key: "disclaimer", pattern: sectionPattern(String.raw`免责(?:声明)?`) },
+  { key: "gallery", pattern: GALLERY_HEADER_LINE_RE },
 ];
 
 const SECTION_TITLES: Record<string, string> = {
@@ -67,10 +120,8 @@ const SECTION_TITLES: Record<string, string> = {
   disclaimer: "免责声明",
 };
 
-const IMG_TAG_RE = /@img\[([^|\]]+)\|([^|\]]+)\|([^\]]*)\]/g;
-
 const TIME_PERIOD_RE =
-  /^(?:[-*•]\s*)?\*{0,2}(上午|中午|下午|晚间|晚上|夜间|早餐|午餐|晚餐)[：:]\s*(.+?)\*{0,2}(?:[（(]详见汇总清单\s*#?([\d,\s#]+)[）)])?$/i;
+  /^(?:[-*•]\s*)?\*{0,2}(上午|中午|下午|晚间|晚上|夜间|早餐|午餐|晚餐)[：:]\s*(.+?)\*{0,2}(?:[（(]详见(?:汇总|美食)清单\s*#?([\d,\s#]+)[）)])?$/i;
 
 const DAY_HEADER_RE =
   /^(?:#{1,4}\s*)?(?:Day\s*)?(\d+)\s*[：:]\s*(.+)$/i;
@@ -100,7 +151,13 @@ export function isTravelPlanContent(content: string): boolean {
     content
   );
   const hasDaily = SECTION_DEFS.find((s) => s.key === "daily")!.pattern.test(content);
-  return hasOverview && hasDaily;
+  if (hasOverview && hasDaily) return true;
+
+  const dayHeaders = content.match(DAY_HEADER_COUNT_RE) ?? [];
+  if (dayHeaders.length >= 2 && hits >= 1) return true;
+  if (dayHeaders.length >= 1 && hasOverview) return true;
+
+  return false;
 }
 
 export function parseImageTags(text: string): ImageTagItem[] {
@@ -125,9 +182,6 @@ function normalizeCategory(raw: string): ImageCategory {
   return "其他";
 }
 
-const GALLERY_HEADER_RE =
-  /(?:^|\n)[#*\s]*(?:十[、.．]\s*)?(?:关联图示|图示索引)/im;
-
 function stripSectionHeader(text: string): string {
   return text
     .replace(
@@ -140,9 +194,9 @@ function stripSectionHeader(text: string): string {
 
 /** 移除「关联图示」章节正文及 @img 标签，避免原样展示 */
 export function stripGalleryFromText(text: string): string {
-  const match = GALLERY_HEADER_RE.exec(text);
-  if (match && match.index !== undefined) {
-    return text.slice(0, match.index).trim();
+  const cutAt = findGalleryStart(text);
+  if (cutAt >= 0) {
+    return text.slice(0, cutAt).trim();
   }
   return text.replace(IMG_TAG_RE, "").trim();
 }
@@ -200,9 +254,12 @@ function parseDayPlans(content: string): DayPlan[] {
       continue;
     }
 
-    if (line.includes("当日交通小结") && current) {
+    if (/交通(?:小贴士|小结)/.test(line) && current) {
       flushSlot();
-      current.summary = line.replace(/^[-*•]\s*/, "").replace(/\*+/g, "");
+      current.summary = line
+        .replace(/^[-*•]\s*/, "")
+        .replace(/\*+/g, "")
+        .replace(/^当?日?交通(?:小贴士|小结)[：:]\s*/, "");
       continue;
     }
 
@@ -276,6 +333,13 @@ export function parseTravelPlan(content: string): ParsedTravelPlan {
     const match = def.pattern.exec(content);
     if (match) {
       markers.push({ key: def.key, index: match.index });
+    }
+  }
+
+  if (!markers.some((m) => m.key === "gallery")) {
+    const galleryStart = findGalleryStart(content);
+    if (galleryStart >= 0) {
+      markers.push({ key: "gallery", index: galleryStart });
     }
   }
 

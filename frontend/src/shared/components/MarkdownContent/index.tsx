@@ -7,6 +7,7 @@ import TravelPlanContent from "@/features/travel-plan/components/TravelPlanConte
 import {
   isTravelPlanContent,
   parseTravelPlan,
+  stripGalleryFromText,
 } from "@/features/travel-plan/parsers/parseTravelPlan";
 import { parseMarkdownTable, splitMarkdownSegments } from "./parseTable";
 import "./index.less";
@@ -111,7 +112,7 @@ export default function MarkdownContent({ content }: MarkdownContentProps) {
     );
   }
 
-  const segments = splitMarkdownSegments(content);
+  const segments = splitMarkdownSegments(stripGalleryFromText(content));
 
   return (
     <div className="markdown-content">
