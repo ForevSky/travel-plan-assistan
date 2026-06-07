@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException
 
 from backend.web.api import store
+from backend.web.services import generation_registry
 from backend.web.api.schemas import (
     ConversationDetail,
     ConversationSummary,
@@ -24,12 +25,23 @@ def create_conversation(body: CreateConversationRequest):
     return conv
 
 
+def _attach_generation_state(conv: dict) -> dict:
+    job = generation_registry.get_active(conv["id"])
+    if job:
+        conv["generating"] = True
+        conv["generation_status"] = job.status_text
+    else:
+        conv["generating"] = False
+        conv["generation_status"] = ""
+    return conv
+
+
 @router.get("/{conv_id}", response_model=ConversationDetail)
 def get_conversation(conv_id: str):
     conv = store.get_conversation(conv_id)
     if not conv:
         raise HTTPException(status_code=404, detail="会话不存在")
-    return conv
+    return _attach_generation_state(conv)
 
 
 @router.patch("/{conv_id}", response_model=ConversationDetail)

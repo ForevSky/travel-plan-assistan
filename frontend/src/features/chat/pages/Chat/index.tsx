@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button, Modal, Space, Spin, Tag, Tooltip, message } from "antd";
-import { DeleteOutlined, ShareAltOutlined } from "@ant-design/icons";
+import { ShareAltOutlined } from "@ant-design/icons";
 import ChatMessages from "@/features/chat/components/ChatMessages";
 import ChatInputBar from "@/features/chat/components/ChatInputBar";
 import { useChatAutoScroll } from "@/features/chat/hooks/useChatAutoScroll";
 import { useAppContext } from "@/shared/context/AppContext";
 import { conversationApi, shareApi } from "@/shared/api";
 import { shareLink } from "@/shared/utils/share";
-import type { ConversationDetail, Message } from "@/shared/types";
+import type { ConversationDetail, Message, StreamDonePayload } from "@/shared/types";
 import "./index.less";
 
 export default function ChatPage() {
@@ -54,6 +54,167 @@ export default function ChatPage() {
     return conv;
   }, []);
 
+  const buildStreamHandlers = useCallback(
+    (tempUserId: string, tempAssistantId: string) => ({
+      onUserMessage: (msg: Message) => {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempUserId ? msg : m))
+        );
+      },
+      onStatus: (t: string) => setStatusText(t),
+      onDelta: (delta: string) => {
+        setStatusText("");
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempAssistantId
+              ? { ...m, content: m.content + delta }
+              : m
+          )
+        );
+      },
+      onDone: (payload: StreamDonePayload) => {
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id === tempUserId) return payload.user_message;
+            if (m.id === tempAssistantId)
+              return { ...payload.assistant_message, streaming: false };
+            return m;
+          })
+        );
+        setActiveConv((prev) =>
+          prev
+            ? {
+                ...prev,
+                has_plan: payload.has_plan,
+                city: payload.city,
+                days: payload.days,
+                title: payload.title || prev.title,
+                generating: false,
+                generation_status: "",
+              }
+            : prev
+        );
+        refreshConversations();
+      },
+      onError: (errMsg: string) => {
+        message.error(errMsg);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempAssistantId
+              ? { ...m, content: errMsg, streaming: false }
+              : m
+          )
+        );
+      },
+    }),
+    [refreshConversations]
+  );
+
+  const runStream = useCallback(
+    async (
+      convId: string,
+      tempUserId: string,
+      tempAssistantId: string,
+      mode: "send" | "reconnect",
+      content?: string
+    ) => {
+      streamAbortRef.current?.abort();
+      const abortController = new AbortController();
+      streamAbortRef.current = abortController;
+
+      const handlers = buildStreamHandlers(tempUserId, tempAssistantId);
+
+      try {
+        if (mode === "send" && content) {
+          await conversationApi.sendMessageStream(
+            convId,
+            content,
+            handlers,
+            { signal: abortController.signal }
+          );
+        } else {
+          await conversationApi.reconnectStream(convId, handlers, {
+            signal: abortController.signal,
+          });
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          setMessages((prev) =>
+            prev.map((m) => (m.streaming ? { ...m, streaming: false } : m))
+          );
+          return;
+        }
+        if (
+          mode === "reconnect" &&
+          err instanceof Error &&
+          err.message.includes("无进行中的生成")
+        ) {
+          await loadConversation(convId);
+          return;
+        }
+        const errMsg = err instanceof Error ? err.message : "连接失败";
+        message.error(errMsg);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempAssistantId
+              ? { ...m, content: errMsg, streaming: false }
+              : m
+          )
+        );
+      } finally {
+        setLoading(false);
+        setStatusText("");
+        streamingRef.current = false;
+      }
+    },
+    [buildStreamHandlers, loadConversation]
+  );
+
+  const attachToGeneration = useCallback(
+    async (conv: ConversationDetail) => {
+      if (streamingRef.current) return;
+
+      const lastUser = [...conv.messages]
+        .reverse()
+        .find((m) => m.role === "user");
+      if (!lastUser) return;
+
+      const hasPendingAssistant = conv.messages.some(
+        (m) => m.role === "assistant" && m.streaming
+      );
+      if (hasPendingAssistant) return;
+
+      streamingRef.current = true;
+      setLoading(true);
+      setStatusText(conv.generation_status || "");
+      resetStickToBottom();
+
+      const tempAssistantId = `temp-assistant-${Date.now()}`;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") return prev;
+        return [
+          ...prev,
+          {
+            id: tempAssistantId,
+            role: "assistant" as const,
+            content: "",
+            created_at: new Date().toISOString(),
+            streaming: true,
+          },
+        ];
+      });
+
+      await runStream(
+        conv.id,
+        lastUser.id,
+        tempAssistantId,
+        "reconnect"
+      );
+    },
+    [resetStickToBottom, runStream]
+  );
+
   useEffect(() => {
     if (!conversationId) {
       navigate("/", { replace: true });
@@ -72,7 +233,12 @@ export default function ChatPage() {
 
     async function boot(id: string) {
       try {
-        await loadConversation(id);
+        const conv = await loadConversation(id);
+        if (cancelled) return;
+        setBooting(false);
+        if (conv.generating) {
+          await attachToGeneration(conv);
+        }
       } catch {
         if (!cancelled) {
           message.error("加载会话失败");
@@ -87,7 +253,7 @@ export default function ChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [conversationId, loadConversation, navigate]);
+  }, [conversationId, loadConversation, navigate, attachToGeneration]);
 
   const handleShare = useCallback(async () => {
     if (!activeConv) return;
@@ -136,91 +302,15 @@ export default function ChatPage() {
         },
       ]);
 
-      streamAbortRef.current?.abort();
-      const abortController = new AbortController();
-      streamAbortRef.current = abortController;
-
-      try {
-        await conversationApi.sendMessageStream(
-          activeConv.id,
-          content,
-          {
-            onUserMessage: (msg) => {
-              setMessages((prev) =>
-                prev.map((m) => (m.id === tempUserId ? msg : m))
-              );
-            },
-            onStatus: (t) => setStatusText(t),
-            onDelta: (delta) => {
-              setStatusText("");
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === tempAssistantId
-                    ? { ...m, content: m.content + delta }
-                    : m
-                )
-              );
-            },
-            onDone: (payload) => {
-              setMessages((prev) =>
-                prev.map((m) => {
-                  if (m.id === tempUserId) return payload.user_message;
-                  if (m.id === tempAssistantId)
-                    return { ...payload.assistant_message, streaming: false };
-                  return m;
-                })
-              );
-              setActiveConv((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      has_plan: payload.has_plan,
-                      city: payload.city,
-                      days: payload.days,
-                      title: payload.title || prev.title,
-                    }
-                  : prev
-              );
-              refreshConversations();
-            },
-            onError: (errMsg) => {
-              message.error(errMsg);
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === tempAssistantId
-                    ? { ...m, content: errMsg, streaming: false }
-                    : m
-                )
-              );
-            },
-          },
-          { signal: abortController.signal }
-        );
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.streaming ? { ...m, streaming: false, stopped: true } : m
-            )
-          );
-          return;
-        }
-        const errMsg = err instanceof Error ? err.message : "发送失败";
-        message.error(errMsg);
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === tempAssistantId
-              ? { ...m, content: errMsg, streaming: false }
-              : m
-          )
-        );
-      } finally {
-        setLoading(false);
-        setStatusText("");
-        streamingRef.current = false;
-      }
+      await runStream(
+        activeConv.id,
+        tempUserId,
+        tempAssistantId,
+        "send",
+        content
+      );
     },
-    [activeConv, input, loading, refreshConversations, resetStickToBottom]
+    [activeConv, input, loading, resetStickToBottom, runStream]
   );
 
   const handleStop = useCallback(() => {

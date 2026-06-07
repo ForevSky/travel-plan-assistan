@@ -1,4 +1,4 @@
-import { request, streamRequest, type StreamOptions } from "./client";
+import { request, streamRequest, streamGet, type StreamOptions } from "./client";
 import type {
   ConversationDetail,
   ConversationSummary,
@@ -51,6 +51,18 @@ export const conversationApi = {
     },
     options?: StreamOptions
   ) => streamRequest(PATHS.messagesStream(id), { content }, handlers, options),
+
+  reconnectStream: (
+    id: string,
+    handlers: {
+      onUserMessage?: (msg: Message) => void;
+      onStatus?: (text: string) => void;
+      onDelta: (delta: string) => void;
+      onDone: (payload: StreamDonePayload) => void;
+      onError: (message: string) => void;
+    },
+    options?: StreamOptions
+  ) => streamGet(PATHS.messagesStream(id), handlers, options),
 };
 
 export default conversationApi;

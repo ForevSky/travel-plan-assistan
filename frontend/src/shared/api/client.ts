@@ -108,6 +108,28 @@ export async function streamRequest(
     signal: options?.signal,
   });
 
+  await consumeSSE(response, handlers);
+}
+
+/** 续订进行中的 SSE 流（GET，无请求体） */
+export async function streamGet(
+  url: string,
+  handlers: StreamHandlers,
+  options?: StreamOptions
+): Promise<void> {
+  const response = await fetch(`${BASE_URL}${url}`, {
+    method: "GET",
+    headers: { Accept: "text/event-stream" },
+    signal: options?.signal,
+  });
+
+  await consumeSSE(response, handlers);
+}
+
+async function consumeSSE(
+  response: Response,
+  handlers: StreamHandlers
+): Promise<void> {
   if (!response.ok) {
     let message = response.statusText;
     try {

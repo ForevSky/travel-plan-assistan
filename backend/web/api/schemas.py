@@ -24,6 +24,8 @@ class ConversationDetail(ConversationSummary):
     messages: List[MessageOut] = Field(default_factory=list)
     city: str = ""
     days: int = 0
+    generating: bool = False
+    generation_status: str = ""
 
 
 class CreateConversationRequest(BaseModel):

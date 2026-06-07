@@ -7,21 +7,19 @@ from fastapi.responses import StreamingResponse
 
 from backend.web.api.schemas import ExportResponse, SendMessageRequest
 from backend.web.services import chat_service
+from backend.web.services import generation_registry
 
 router = APIRouter(prefix="/api/conversations", tags=["chat"])
 
 
-@router.post("/{conv_id}/messages/stream")
-def send_message_stream(conv_id: str, body: SendMessageRequest):
-    if not body.content.strip():
-        raise HTTPException(status_code=400, detail="消息不能为空")
-
+def _stream_response(job) -> StreamingResponse:
     def event_stream():
         try:
-            yield from chat_service.process_message_stream(conv_id, body.content)
-        except Exception as exc:
-            payload = json.dumps({"message": f"服务异常：{exc}"}, ensure_ascii=False)
-            yield f"event: error\ndata: {payload}\n\n"
+            yield from generation_registry.subscribe(job)
+        except GeneratorExit:
+            pass
+        finally:
+            generation_registry.cleanup(job.conv_id)
 
     return StreamingResponse(
         event_stream(),
@@ -32,6 +30,24 @@ def send_message_stream(conv_id: str, body: SendMessageRequest):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.post("/{conv_id}/messages/stream")
+def send_message_stream(conv_id: str, body: SendMessageRequest):
+    if not body.content.strip():
+        raise HTTPException(status_code=400, detail="消息不能为空")
+
+    job = generation_registry.start(conv_id, body.content.strip())
+    return _stream_response(job)
+
+
+@router.get("/{conv_id}/messages/stream")
+def reconnect_message_stream(conv_id: str):
+    """续订进行中的生成流（切换对话后返回时使用）。"""
+    job = generation_registry.get_active(conv_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="无进行中的生成")
+    return _stream_response(job)
 
 
 @router.post("/{conv_id}/export", response_model=ExportResponse)

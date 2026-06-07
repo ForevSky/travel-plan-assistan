@@ -19,6 +19,8 @@ export interface ConversationDetail extends ConversationSummary {
   messages: Message[];
   city: string;
   days: number;
+  generating?: boolean;
+  generation_status?: string;
 }
 
 export interface StreamDonePayload {

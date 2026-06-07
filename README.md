@@ -13,8 +13,10 @@
 | 领域拒答 | 非旅行问题拒答并引导 |
 | 结构化展示 | 每日时间轴 + 关联图示（上图下词） |
 | 流式输出 | Web 端 SSE 实时展示生成过程 |
-| 暂停生成 | 生成中可点击底部按钮停止，保留已输出内容 |
-| 会话管理 | 多会话列表、搜索、删除（生成中亦可操作） |
+| 后台继续生成 | 切换对话时后端不中断，生成完成后自动落库 |
+| 流式续订 | 切回原对话时自动续订 SSE，从当前进度继续展示 |
+| 暂停生成 | 生成中可点击底部按钮停止前端展示（后端仍会跑完） |
+| 会话管理 | 多会话列表、搜索、删除（生成中可切换，不影响后台任务） |
 | 分享 | 分享完整会话或单条攻略，独立分享页预览 |
 | 导出文件 | Web 端浏览器下载 TXT；CLI 保存至 `storage/output/` |
 | API 兜底 | 失败时可选本地模板（成都/北京） |
@@ -65,8 +67,9 @@ python web_server.py
 |------|------|
 | 新建对话 | 首页输入需求，或侧栏点击「新建对话」 |
 | 发送消息 | Enter 发送，Shift+Enter 换行 |
-| 暂停生成 | 生成中底部按钮变为暂停图标，点击即可停止 |
-| 删除会话 | 侧栏会话项右侧删除按钮（生成中可用，会先中断流式请求） |
+| 切换对话 | 生成中可切到其他会话，后台继续生成；切回后自动续订流式输出 |
+| 暂停生成 | 生成中底部按钮变为暂停图标，点击停止前端展示（后台仍会完成并落库） |
+| 删除会话 | 侧栏会话项右侧删除按钮 |
 | 分享会话 | 攻略生成完成后，聊天页顶部「分享会话」 |
 | 分享单条攻略 | 攻略卡片右上角分享图标 |
 | 导出攻略 | 攻略卡片右上角下载图标，浏览器保存 TXT |
@@ -91,7 +94,7 @@ travel-plan-assistant/
 │   ├── fallback/               # API 失败兜底
 │   └── web/                    # Web API（FastAPI + SQLite）
 │       ├── api/                # 路由、模型、存储
-│       └── services/           # Web 聊天编排、分享服务
+│       └── services/           # Web 聊天编排、后台生成、分享服务
 │
 ├── frontend/                   # React 前端
 │   └── src/
@@ -132,8 +135,9 @@ travel-plan-assistant/
 |------|------|------|
 | GET | `/api/health` | 健康检查 |
 | GET/POST | `/api/conversations` | 列表 / 创建会话 |
-| GET/PATCH/DELETE | `/api/conversations/{id}` | 详情 / 重命名 / 删除 |
-| POST | `/api/conversations/{id}/messages/stream` | SSE 流式对话 |
+| GET/PATCH/DELETE | `/api/conversations/{id}` | 详情（含 `generating` 状态）/ 重命名 / 删除 |
+| POST | `/api/conversations/{id}/messages/stream` | SSE 流式发送消息 |
+| GET | `/api/conversations/{id}/messages/stream` | SSE 续订进行中的生成 |
 | POST | `/api/conversations/{id}/export` | 服务端导出攻略 |
 | POST | `/api/conversations/{id}/share` | 创建会话分享 |
 | POST | `/api/conversations/{id}/messages/{msg_id}/share` | 创建攻略分享 |
