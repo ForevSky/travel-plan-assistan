@@ -1,0 +1,219 @@
+@import "@/shared/styles/variables.less";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: @font-family;
+  background: @bg-page;
+  color: @text-primary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: @border-default;
+  border-radius: 3px;
+
+  &:hover {
+    background: @text-tertiary;
+  }
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+// Ant Design 全局微调
+.ant-btn-primary {
+  background: @primary !important;
+
+  &:hover {
+    background: @primary-hover !important;
+  }
+}
+
+.ant-message-notice-content {
+  border-radius: @radius-sm !important;
+  box-shadow: @shadow-md !important;
+}
+
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.8;
+  color: @text-primary;
+  word-break: break-word;
+
+  > *:first-child {
+    margin-top: 0 !important;
+  }
+
+  > *:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 1.4em 0 0.6em;
+    font-weight: 600;
+    line-height: 1.4;
+    color: @text-primary;
+    letter-spacing: -0.01em;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  h1 {
+    font-size: 1.4em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid @border-light;
+  }
+
+  h2 {
+    font-size: 1.2em;
+    padding-bottom: 0.2em;
+    border-bottom: 1px solid @border-light;
+  }
+
+  h3 {
+    font-size: 1.05em;
+    color: #1e293b;
+  }
+
+  h4 {
+    font-size: 1em;
+  }
+
+  p {
+    margin: 0.65em 0;
+    color: #334155;
+  }
+
+  ul,
+  ol {
+    margin: 0.65em 0;
+    padding-left: 1.5em;
+  }
+
+  li {
+    margin: 0.35em 0;
+    color: #334155;
+
+    &::marker {
+      color: @text-tertiary;
+    }
+  }
+
+  ul ul,
+  ol ol,
+  ul ol,
+  ol ul {
+    margin: 0.25em 0;
+  }
+
+  blockquote {
+    margin: 1em 0;
+    padding: 12px 16px;
+    border-left: 3px solid @primary;
+    border-radius: 0 @radius-sm @radius-sm 0;
+    background: @primary-light;
+    color: #475569;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  code {
+    padding: 0.15em 0.45em;
+    border-radius: 4px;
+    background: @bg-subtle;
+    border: 1px solid @border-light;
+    font-family: "SF Mono", Consolas, Monaco, monospace;
+    font-size: 0.88em;
+    color: #be185d;
+  }
+
+  pre {
+    margin: 1em 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    border-radius: @radius-sm;
+    background: #1e293b;
+    border: none;
+
+    code {
+      padding: 0;
+      background: transparent;
+      border: none;
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+  }
+
+  table {
+    width: 100%;
+    margin: 1em 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    border: 1px solid @border-light;
+    border-radius: @radius-sm;
+    overflow: hidden;
+  }
+
+  th,
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid @border-light;
+    text-align: left;
+  }
+
+  th {
+    background: @bg-subtle;
+    font-weight: 600;
+    color: @text-primary;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  hr {
+    margin: 1.5em 0;
+    border: none;
+    border-top: 1px solid @border-light;
+  }
+
+  strong {
+    font-weight: 600;
+    color: @text-primary;
+  }
+
+  a {
+    color: @primary;
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

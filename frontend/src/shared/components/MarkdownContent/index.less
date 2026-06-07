@@ -1,0 +1,84 @@
+@import "@/shared/styles/variables.less";
+
+.markdown-content {
+  &--plan {
+    width: 100%;
+  }
+
+  &__heading {
+    margin: 0.8em 0 0.4em !important;
+
+    &:first-child {
+      margin-top: 0 !important;
+    }
+  }
+
+  &__subheading {
+    display: block;
+    margin: 0.6em 0 0.3em;
+    font-size: 14px;
+  }
+
+  &__paragraph {
+    margin-bottom: 0.5em !important;
+    color: #334155;
+  }
+
+  &__list {
+    margin: 0.5em 0 0.8em;
+    padding-left: 1.5em;
+
+    &--ordered {
+      list-style-type: decimal;
+
+      &::marker {
+        color: @primary;
+        font-weight: 500;
+      }
+    }
+
+    &:not(&--ordered) {
+      list-style-type: disc;
+    }
+  }
+
+  &__list-item {
+    margin: 0.35em 0;
+    color: #334155;
+    line-height: 1.7;
+
+    .markdown-content__paragraph {
+      margin-bottom: 0.25em !important;
+
+      &:last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+  }
+
+  &__table-wrap {
+    margin: 12px 0 16px;
+    overflow-x: auto;
+  }
+
+  &__table {
+    .ant-table-thead > tr > th {
+      background: @bg-subtle !important;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .ant-table-tbody > tr > td {
+      font-size: 13px;
+      vertical-align: top;
+    }
+  }
+
+  &__table-fallback {
+    overflow-x: auto;
+    padding: 12px;
+    border-radius: @radius-sm;
+    background: @bg-subtle;
+    font-size: 12px;
+  }
+}

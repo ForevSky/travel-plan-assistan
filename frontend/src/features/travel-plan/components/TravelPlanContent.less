@@ -1,0 +1,313 @@
+@import "@/shared/styles/variables.less";
+
+.travel-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__inline-gallery {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed @border-light;
+  }
+
+  &__gallery-label {
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: @text-secondary;
+    letter-spacing: 0.04em;
+  }
+
+  &__gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 12px;
+  }
+
+  &__section {
+    border: 1px solid @border-light;
+    border-radius: @radius-md;
+    background: @bg-elevated;
+    overflow: hidden;
+    box-shadow: @shadow-sm;
+  }
+
+  &__section-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: @bg-subtle;
+    border-bottom: 1px solid @border-light;
+  }
+
+  &__section-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: @radius-sm;
+    background: @primary-light;
+    color: @primary;
+    font-size: 14px;
+  }
+
+  &__section-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: @text-primary;
+  }
+
+  &__section-body {
+    padding: 14px 16px 16px;
+  }
+
+  &__md-p {
+    margin-bottom: 0.5em !important;
+    color: #334155;
+    line-height: 1.75;
+  }
+
+  &__md-ul,
+  &__md-ol {
+    margin: 0.4em 0 0.8em;
+    padding-left: 1.25em;
+    color: #334155;
+    line-height: 1.75;
+  }
+
+  &__md-li {
+    margin: 0.3em 0;
+  }
+
+  &__md-h4 {
+    margin: 0.8em 0 0.4em;
+    font-size: 14px;
+    font-weight: 600;
+    color: @text-primary;
+  }
+
+  &__table {
+    margin: 8px 0;
+
+    .ant-table-thead > tr > th {
+      background: @bg-subtle !important;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .ant-table-tbody > tr > td {
+      font-size: 13px;
+      vertical-align: top;
+    }
+  }
+
+  &__table-fallback {
+    overflow-x: auto;
+    padding: 12px;
+    border-radius: @radius-sm;
+    background: @bg-subtle;
+    font-size: 12px;
+  }
+}
+
+.travel-image-card {
+  border: 1px solid @border-light;
+  border-radius: @radius-sm;
+  overflow: hidden;
+  background: @bg-elevated;
+  transition: box-shadow @transition-normal, transform @transition-normal;
+
+  &:hover {
+    box-shadow: @shadow-md;
+    transform: translateY(-2px);
+  }
+
+  &__media {
+    position: relative;
+    aspect-ratio: 4 / 2.6;
+    overflow: hidden;
+    background: @bg-subtle;
+  }
+
+  &__img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+  }
+
+  &__tag {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    border: none;
+    font-size: 11px;
+
+    &--景点 {
+      background: rgba(37, 99, 235, 0.9) !important;
+      color: #fff !important;
+    }
+
+    &--小吃,
+    &--美食 {
+      background: rgba(245, 158, 11, 0.92) !important;
+      color: #fff !important;
+    }
+
+    &--其他 {
+      background: rgba(100, 116, 139, 0.9) !important;
+      color: #fff !important;
+    }
+  }
+
+  &__body {
+    padding: 10px 12px 12px;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: @text-primary;
+    line-height: 1.4;
+  }
+
+  &__desc {
+    margin-top: 4px;
+    font-size: 12px;
+    color: @text-secondary;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &--compact {
+    .travel-image-card__body {
+      padding: 8px 10px 10px;
+    }
+
+    .travel-image-card__name {
+      font-size: 13px;
+    }
+
+    .travel-image-card__desc {
+      -webkit-line-clamp: 2;
+    }
+  }
+}
+
+.travel-day-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__day {
+    border: 1px solid @border-light;
+    border-radius: @radius-sm;
+    overflow: hidden;
+  }
+
+  &__day-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: linear-gradient(90deg, @primary-light 0%, #fff 100%);
+    border-bottom: 1px solid @border-light;
+  }
+
+  &__day-badge {
+    flex-shrink: 0;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: @primary;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &__day-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: @text-primary;
+  }
+
+  &__slots {
+    padding: 8px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__slot {
+    padding: 10px 12px;
+    border-radius: @radius-sm;
+    background: @bg-subtle;
+    border-left: 3px solid @primary;
+  }
+
+  &__slot-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__slot-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: @text-primary;
+  }
+
+  &__ref {
+    margin: 0 !important;
+    font-size: 11px;
+    background: #fff !important;
+    border-color: @primary-border !important;
+    color: @primary !important;
+  }
+
+  &__details {
+    margin: 8px 0 0;
+    padding-left: 1.1em;
+    color: @text-secondary;
+    font-size: 13px;
+    line-height: 1.7;
+
+    li + li {
+      margin-top: 4px;
+    }
+  }
+
+  &__summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 12px 12px;
+    padding: 10px 12px;
+    border-radius: @radius-sm;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    font-size: 13px;
+    color: #166534;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 768px) {
+  .travel-plan {
+    &__gallery {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+  }
+}

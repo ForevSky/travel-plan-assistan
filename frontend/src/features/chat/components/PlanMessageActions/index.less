@@ -1,0 +1,30 @@
+@import "@/shared/styles/variables.less";
+
+.plan-message-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid @border-light;
+    border-radius: @radius-sm;
+    background: @bg-elevated;
+    color: @text-secondary;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all @transition-fast;
+
+    &:hover {
+      color: @primary;
+      border-color: @primary-border;
+      background: @primary-light;
+    }
+  }
+}

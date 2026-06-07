@@ -1,0 +1,125 @@
+@import "@/shared/styles/variables.less";
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: @bg-page;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: @header-height;
+    padding: 0 16px 0 12px;
+    flex-shrink: 0;
+    background: @bg-elevated;
+    border-bottom: 1px solid @border-light;
+    box-shadow: @shadow-sm;
+    z-index: 100;
+  }
+
+  &__header-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__sidebar-toggle {
+    flex-shrink: 0;
+    color: @text-secondary !important;
+    font-size: 16px;
+
+    &:hover {
+      color: @text-primary !important;
+      background: @bg-subtle !important;
+    }
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity @transition-fast;
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: @radius-sm;
+    background: @primary;
+    color: #fff;
+    font-size: 16px;
+  }
+
+  &__brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: @text-primary;
+    letter-spacing: -0.01em;
+  }
+
+  &__subtitle {
+    font-size: 11px;
+    color: @text-tertiary;
+  }
+
+  &__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  &__sidebar-overlay {
+    display: none;
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: @bg-page;
+  }
+}
+
+@media (max-width: 992px) {
+  .app-shell {
+    &__sidebar-overlay {
+      display: block;
+      position: fixed;
+      inset: @header-height 0 0 0;
+      background: rgba(15, 23, 42, 0.25);
+      z-index: 80;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    &__header {
+      padding: 0 12px 0 8px;
+    }
+
+    &__subtitle {
+      display: none;
+    }
+  }
+}

@@ -1,0 +1,105 @@
+@import "@/shared/styles/variables.less";
+
+.share-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: @bg-page;
+
+  &--loading,
+  &--empty {
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: @header-height;
+    padding: 0 20px;
+    flex-shrink: 0;
+    background: @bg-elevated;
+    border-bottom: 1px solid @border-light;
+    box-shadow: @shadow-sm;
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: @radius-sm;
+    background: @primary;
+    color: #fff;
+    font-size: 16px;
+  }
+
+  &__brand-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: @text-primary;
+  }
+
+  &__brand-sub {
+    font-size: 11px;
+    color: @text-tertiary;
+  }
+
+  &__main {
+    flex: 1;
+    min-height: 0;
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  &__card {
+    max-width: @content-max-width;
+    margin: 0 auto;
+    padding: 28px 32px;
+    border-radius: @radius-lg;
+    border: 1px solid @border-light;
+    background: @bg-elevated;
+    box-shadow: @shadow-md;
+  }
+
+  &__title {
+    margin: 0 0 8px !important;
+  }
+
+  &__meta {
+    display: block;
+    margin-bottom: 24px;
+    color: @text-secondary;
+  }
+
+  &__content,
+  &__conversation,
+  &__plan {
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .share-page {
+    &__header {
+      padding: 0 16px;
+    }
+
+    &__main {
+      padding: 16px;
+    }
+
+    &__card {
+      padding: 20px 16px;
+    }
+  }
+}
